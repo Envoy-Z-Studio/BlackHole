@@ -32,7 +32,11 @@ class _MiniPlayerState extends State<MiniPlayer> {
       child: StreamBuilder<MediaItem?>(
         stream: audioHandler.mediaItem,
         builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.active) {
+            return const SizedBox();
+          }
           final MediaItem? mediaItem = snapshot.data;
+          if (mediaItem == null) return const SizedBox();
 
           final List preferredMiniButtons = Hive.box('settings').get(
             'preferredMiniButtons',
@@ -40,7 +44,7 @@ class _MiniPlayerState extends State<MiniPlayer> {
           )?.toList() as List;
 
           final bool isLocal =
-              mediaItem?.artUri?.toString().startsWith('file:') ?? false;
+              mediaItem.artUri?.toString().startsWith('file:') ?? false;
 
           final bool useDense = Hive.box('settings').get(
                 'useDenseMini',
@@ -52,24 +56,20 @@ class _MiniPlayerState extends State<MiniPlayer> {
             key: const Key('miniplayer'),
             direction: DismissDirection.vertical,
             confirmDismiss: (DismissDirection direction) {
-              if (mediaItem != null) {
-                if (direction == DismissDirection.down) {
-                  audioHandler.stop();
-                } else {
-                  Navigator.pushNamed(context, '/player');
-                }
+              if (direction == DismissDirection.down) {
+                audioHandler.stop();
+              } else {
+                Navigator.pushNamed(context, '/player');
               }
               return Future.value(false);
             },
             child: Dismissible(
-              key: Key(mediaItem?.id ?? 'nothingPlaying'),
+              key: Key(mediaItem.id),
               confirmDismiss: (DismissDirection direction) {
-                if (mediaItem != null) {
-                  if (direction == DismissDirection.startToEnd) {
-                    audioHandler.skipToPrevious();
-                  } else {
-                    audioHandler.skipToNext();
-                  }
+                if (direction == DismissDirection.startToEnd) {
+                  audioHandler.skipToPrevious();
+                } else {
+                  audioHandler.skipToNext();
                 }
                 return Future.value(false);
               },
@@ -88,17 +88,16 @@ class _MiniPlayerState extends State<MiniPlayer> {
                           context: context,
                           preferredMiniButtons: preferredMiniButtons,
                           useDense: useDense,
-                          title: mediaItem?.title ?? '',
-                          subtitle: mediaItem?.artist ?? '',
+                          title: mediaItem.title,
+                          subtitle: mediaItem.artist ?? '',
                           imagePath: (isLocal
-                                  ? mediaItem?.artUri?.toFilePath()
-                                  : mediaItem?.artUri?.toString()) ??
+                                  ? mediaItem.artUri?.toFilePath()
+                                  : mediaItem.artUri?.toString()) ??
                               '',
                           isLocalImage: isLocal,
-                          isDummy: mediaItem == null,
                         ),
                         positionSlider(
-                          mediaItem?.duration?.inSeconds.toDouble(),
+                          mediaItem.duration?.inSeconds.toDouble(),
                         ),
                       ],
                     ),
