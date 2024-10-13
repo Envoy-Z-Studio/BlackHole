@@ -848,6 +848,7 @@ class _SearchPageState extends State<SearchPage> {
                                                                               (title == 'Top Result' && items[0]['type'] == 'artist')
                                                                           ? ArtistSearchPage(
                                                                               data: items[index] as Map,
+                                                                              artistId: items[index]['id'] as String,
                                                                             )
                                                                           : SongsListPage(
                                                                               listItem: items[index] as Map,

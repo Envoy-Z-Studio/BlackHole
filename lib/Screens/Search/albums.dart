@@ -181,6 +181,8 @@ class _AlbumSearchPageState extends State<AlbumSearchPage> {
                                           widget.type == 'Artists'
                                               ? ArtistSearchPage(
                                                   data: entry,
+                                                  artistId:
+                                                      entry['id'].toString(),
                                                 )
                                               : SongsListPage(
                                                   listItem: entry,

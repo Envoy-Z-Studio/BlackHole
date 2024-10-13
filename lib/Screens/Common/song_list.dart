@@ -31,7 +31,7 @@ class SongsListPage extends StatefulWidget {
 }
 
 class _SongsListPageState extends State<SongsListPage> {
-  int page = 1;
+  int page = 0; // TODO: fix
   bool loading = false;
   List songList = [];
   bool fetched = false;
@@ -45,9 +45,9 @@ class _SongsListPageState extends State<SongsListPage> {
     _fetchSongs();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
-              _scrollController.position.maxScrollExtent &&
-          widget.listItem['type'].toString() == 'songs' &&
-          !loading) {
+                  _scrollController.position.maxScrollExtent &&
+              widget.listItem['type'].toString() == 'songs' ||
+          widget.listItem['type'].toString() == 'top-songs' && !loading) {
         page += 1;
         _fetchSongs();
       }
@@ -77,6 +77,27 @@ class _SongsListPageState extends State<SongsListPage> {
               loading = false;
             });
             if (value['error'].toString() != '') {
+              ShowSnackBar().showSnackBar(
+                context,
+                'Error: ${value["error"]}',
+                duration: const Duration(seconds: 3),
+              );
+            }
+          });
+        case 'top-songs':
+          SaavnAPI()
+              .fetchMoreArtistSongs(
+            artistToken: widget.listItem['id'].toString(),
+            page: page,
+            category: widget.listItem['category'].toString(),
+          )
+              .then((value) {
+            setState(() {
+              songList.addAll(value['Top Songs'] as List);
+              fetched = true;
+              loading = false;
+            });
+            if (value['error'] != null) {
               ShowSnackBar().showSnackBar(
                 context,
                 'Error: ${value["error"]}',

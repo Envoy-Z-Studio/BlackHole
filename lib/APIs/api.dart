@@ -493,7 +493,7 @@ class SaavnAPI {
   }) async {
     final Map<String, List> data = {};
     final String params =
-        "${endpoints['artistDetails']}&p=0&n_song=50&n_album=50&sub_type=&category=$category&sort_order=$sortOrder&includeMetaTags=0&artistId=$artistToken";
+        "${endpoints['artistDetails']}&p=0&n_song=10&n_album=50&sub_type=&category=$category&sort_order=$sortOrder&includeMetaTags=0&artistId=$artistToken";
     final res = await getResponse(params);
     if (res.statusCode == 200) {
       final getMain = json.decode(res.body) as Map;
@@ -571,6 +571,32 @@ class SaavnAPI {
       if (similarArtistsSearchedList.isNotEmpty) {
         data[getMain['modules']?['similarArtists']?['title']?.toString() ??
             'Similar Artists'] = similarArtistsSearchedList;
+      }
+    }
+    return data;
+  }
+
+  Future<Map<String, List>> fetchMoreArtistSongs({
+    required String artistToken,
+    String category = '',
+    String sortOrder = '',
+    int page = 0,
+  }) async {
+    final Map<String, List> data = {};
+    final String params =
+        "${endpoints['artistDetails']}&page=$page&n_song=30&n_album=0&sub_type=&category=$category&sort_order=$sortOrder&includeMetaTags=0&artistId=$artistToken";
+    final res = await getResponse(params);
+    if (res.statusCode == 200) {
+      final getMain = json.decode(res.body) as Map;
+      final List topSongsResponseList = getMain['topSongs'] as List;
+      final List topSongsSearchedList =
+          await FormatResponse.formatSongsResponse(
+        topSongsResponseList,
+        'song',
+      );
+      if (topSongsSearchedList.isNotEmpty) {
+        data[getMain['modules']?['topSongs']?['title']?.toString() ??
+            'Top Songs'] = topSongsSearchedList;
       }
     }
     return data;

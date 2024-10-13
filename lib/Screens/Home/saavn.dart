@@ -381,6 +381,8 @@ class _SaavnHomePageState extends State<SaavnHomePage>
                                   opaque: false,
                                   pageBuilder: (_, __, ___) => ArtistSearchPage(
                                     data: likedArtistsList[idx] as Map,
+                                    artistId:
+                                        likedArtistsList[idx]['id'].toString(),
                                   ),
                                 ),
                               );
