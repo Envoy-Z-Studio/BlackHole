@@ -50,7 +50,7 @@ class _ArtistSearchPageState extends State<ArtistSearchPage> {
       status = true;
       SaavnAPI()
           .fetchArtistSongs(
-        artistToken: widget.data['artistToken'].toString(),
+        artistToken: widget.data['id'].toString(),
         category: category,
         sortOrder: sortOrder,
       )

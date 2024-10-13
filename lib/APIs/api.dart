@@ -31,6 +31,7 @@ class SaavnAPI {
     'getAlbumReco': '__call=reco.getAlbumReco', // still not used
     'artistOtherTopSongs':
         '__call=search.artistOtherTopSongs', // still not used
+    'artistDetails': '__call=artist.getArtistPageDetails',
   };
 
   Future<Response> getResponse(
@@ -39,18 +40,21 @@ class SaavnAPI {
     bool useProxy = true,
   }) async {
     Uri url;
+    String param = params;
     if (!usev4) {
-      url = Uri.https(
-        baseUrl,
-        '$apiStr&$params'.replaceAll('&api_version=4', ''),
-      );
-    } else {
-      url = Uri.https(baseUrl, '$apiStr&$params');
+      param = param.replaceAll('&api_version=4', '');
     }
+    url = Uri.parse('https://$baseUrl$apiStr&$param');
+
     preferredLanguages =
         preferredLanguages.map((lang) => lang.toLowerCase()).toList();
     final String languageHeader = 'L=${preferredLanguages.join('%2C')}';
-    headers = {'cookie': languageHeader, 'Accept': '*/*'};
+    headers = {
+      'cookie': languageHeader,
+      'Accept': 'application/json, text/plain, */*',
+      'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
+    };
 
     if (useProxy && settingsBox.get('useProxy', defaultValue: false) as bool) {
       final String proxyIP =
@@ -489,7 +493,7 @@ class SaavnAPI {
   }) async {
     final Map<String, List> data = {};
     final String params =
-        '${endpoints["fromToken"]}&type=artist&p=&n_song=50&n_album=50&sub_type=&category=$category&sort_order=$sortOrder&includeMetaTags=0&token=$artistToken';
+        "${endpoints['artistDetails']}&p=0&n_song=50&n_album=50&sub_type=&category=$category&sort_order=$sortOrder&includeMetaTags=0&artistId=$artistToken";
     final res = await getResponse(params);
     if (res.statusCode == 200) {
       final getMain = json.decode(res.body) as Map;
