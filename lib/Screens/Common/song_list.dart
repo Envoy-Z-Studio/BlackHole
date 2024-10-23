@@ -7,10 +7,12 @@ import 'package:blackhole/CustomWidgets/download_button.dart';
 import 'package:blackhole/CustomWidgets/gradient_containers.dart';
 import 'package:blackhole/CustomWidgets/image_card.dart';
 import 'package:blackhole/CustomWidgets/like_button.dart';
+import 'package:blackhole/CustomWidgets/on_hover.dart';
 import 'package:blackhole/CustomWidgets/playlist_popupmenu.dart';
 import 'package:blackhole/CustomWidgets/snackbar.dart';
 import 'package:blackhole/CustomWidgets/song_tile_trailing_menu.dart';
 import 'package:blackhole/Helpers/extensions.dart';
+import 'package:blackhole/Models/image_quality.dart';
 import 'package:blackhole/Models/url_image_generator.dart';
 import 'package:blackhole/Services/player_service.dart';
 import 'package:flutter/material.dart';
@@ -93,7 +95,7 @@ class _SongsListPageState extends State<SongsListPage> {
           )
               .then((value) {
             setState(() {
-              songList.addAll(value['Top Songs'] as List);
+              songList.addAll(value['Top Songs']!);
               fetched = true;
               loading = false;
             });
@@ -206,6 +208,11 @@ class _SongsListPageState extends State<SongsListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final double boxSize =
+        MediaQuery.sizeOf(context).height > MediaQuery.sizeOf(context).width
+            ? MediaQuery.sizeOf(context).width / 2
+            : MediaQuery.sizeOf(context).height / 2.5;
+
     return GradientContainer(
       child: Scaffold(
         backgroundColor: Colors.transparent,
@@ -264,70 +271,292 @@ class _SongsListPageState extends State<SongsListPage> {
                 imageUrl: UrlImageGetter([widget.listItem['image']?.toString()])
                     .mediumQuality,
                 sliverList: SliverList(
-                  delegate: SliverChildListDelegate([
-                    if (songList.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(
-                          left: 20.0,
-                          top: 5.0,
-                          bottom: 5.0,
-                        ),
-                        child: Text(
-                          AppLocalizations.of(context)!.songs,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18.0,
-                            color: Theme.of(context).colorScheme.secondary,
+                  delegate: SliverChildListDelegate(
+                    [
+                      if (songList.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                            left: 20.0,
+                            top: 5.0,
+                            bottom: 5.0,
+                          ),
+                          child: Text(
+                            AppLocalizations.of(context)!.songs,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18.0,
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
                           ),
                         ),
-                      ),
-                    ...songList.map((entry) {
-                      return ListTile(
-                        contentPadding: const EdgeInsets.only(left: 15.0),
-                        title: Text(
-                          '${entry["title"]}',
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w500,
+                      ...songList.map((entry) {
+                        return ListTile(
+                          contentPadding: const EdgeInsets.only(left: 15.0),
+                          title: Text(
+                            '${entry["title"]}',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
+                          onLongPress: () {
+                            copyToClipboard(
+                              context: context,
+                              text: '${entry["title"]}',
+                            );
+                          },
+                          subtitle: Text(
+                            '${entry["subtitle"]}',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          leading:
+                              imageCard(imageUrl: entry['image'].toString()),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              DownloadButton(
+                                data: entry as Map,
+                                icon: 'download',
+                              ),
+                              LikeButton(
+                                mediaItem: null,
+                                data: entry,
+                              ),
+                              SongTileTrailingMenu(data: entry),
+                            ],
+                          ),
+                          onTap: () {
+                            PlayerInvoke.init(
+                              songsList: songList,
+                              index: songList.indexWhere(
+                                (element) => element == entry,
+                              ),
+                              isOffline: false,
+                            );
+                          },
+                        );
+                      }),
+                      if (widget.listItem['type'] == 'album')
+                        FutureBuilder(
+                          future: SaavnAPI().getAlbumRecommendations(
+                            widget.listItem['id'].toString(),
+                          ),
+                          builder: (context, snapshot) => snapshot.hasData
+                              ? snapshot.data! != []
+                                  ? Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            left: 20.0,
+                                            top: 5.0,
+                                            bottom: 5.0,
+                                          ),
+                                          child: Text(
+                                            'Recommendations',
+                                            style: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .secondary,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          height: boxSize + 15,
+                                          child: ListView.builder(
+                                            physics:
+                                                const BouncingScrollPhysics(),
+                                            scrollDirection: Axis.horizontal,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                            ),
+                                            itemCount: snapshot.data!.length,
+                                            itemBuilder: (context, index) {
+                                              final Map item =
+                                                  snapshot.data![index] as Map;
+                                              if (item.isEmpty) {
+                                                return const SizedBox();
+                                              }
+                                              return GestureDetector(
+                                                onLongPress: () {
+                                                  Feedback.forLongPress(
+                                                      context);
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (context) {
+                                                      return InteractiveViewer(
+                                                        child: Stack(
+                                                          children: [
+                                                            GestureDetector(
+                                                              onTap: () =>
+                                                                  Navigator.pop(
+                                                                      context),
+                                                            ),
+                                                            AlertDialog(
+                                                              shape:
+                                                                  RoundedRectangleBorder(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            15.0),
+                                                              ),
+                                                              backgroundColor:
+                                                                  Colors
+                                                                      .transparent,
+                                                              contentPadding:
+                                                                  EdgeInsets
+                                                                      .zero,
+                                                              content:
+                                                                  imageCard(
+                                                                borderRadius:
+                                                                    15.0,
+                                                                imageUrl: item[
+                                                                        'image']
+                                                                    .toString(),
+                                                                imageQuality:
+                                                                    ImageQuality
+                                                                        .high,
+                                                                boxDimension:
+                                                                    MediaQuery
+                                                                            .sizeOf(
+                                                                          context,
+                                                                        ).width *
+                                                                        0.8,
+                                                                placeholderImage:
+                                                                    const AssetImage(
+                                                                  'assets/album.png',
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    },
+                                                  );
+                                                },
+                                                onTap: () {
+                                                  Navigator.push(
+                                                    context,
+                                                    PageRouteBuilder(
+                                                      opaque: false,
+                                                      pageBuilder:
+                                                          (_, __, ___) =>
+                                                              SongsListPage(
+                                                        listItem: item,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                                child: SizedBox(
+                                                  width: boxSize - 30,
+                                                  child: HoverBox(
+                                                    child: imageCard(
+                                                      margin:
+                                                          const EdgeInsets.all(
+                                                              4.0),
+                                                      borderRadius: 10.0,
+                                                      imageUrl: item['image']
+                                                          .toString(),
+                                                      imageQuality:
+                                                          ImageQuality.medium,
+                                                      placeholderImage:
+                                                          const AssetImage(
+                                                        'assets/album.png',
+                                                      ),
+                                                    ),
+                                                    builder: ({
+                                                      required BuildContext
+                                                          context,
+                                                      required bool isHover,
+                                                      Widget? child,
+                                                    }) {
+                                                      return Card(
+                                                        color: isHover
+                                                            ? null
+                                                            : Colors
+                                                                .transparent,
+                                                        elevation: 0,
+                                                        margin: EdgeInsets.zero,
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(
+                                                            10.0,
+                                                          ),
+                                                        ),
+                                                        clipBehavior:
+                                                            Clip.antiAlias,
+                                                        child: Column(
+                                                          children: [
+                                                            Stack(
+                                                              children: [
+                                                                SizedBox.square(
+                                                                  dimension: isHover
+                                                                      ? boxSize -
+                                                                          25
+                                                                      : boxSize -
+                                                                          30,
+                                                                  child: child,
+                                                                ),
+                                                              ],
+                                                            ),
+                                                            Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .symmetric(
+                                                                horizontal:
+                                                                    10.0,
+                                                              ),
+                                                              child: Column(
+                                                                children: [
+                                                                  Text(
+                                                                    item['title']
+                                                                            ?.toString()
+                                                                            .unescape() ??
+                                                                        '',
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .center,
+                                                                    softWrap:
+                                                                        false,
+                                                                    overflow:
+                                                                        TextOverflow
+                                                                            .ellipsis,
+                                                                    style:
+                                                                        const TextStyle(
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .w500,
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : const SizedBox(
+                                      height: 0.0,
+                                    )
+                              : const SizedBox(
+                                  height: 0.0,
+                                ),
                         ),
-                        onLongPress: () {
-                          copyToClipboard(
-                            context: context,
-                            text: '${entry["title"]}',
-                          );
-                        },
-                        subtitle: Text(
-                          '${entry["subtitle"]}',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        leading: imageCard(imageUrl: entry['image'].toString()),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            DownloadButton(
-                              data: entry as Map,
-                              icon: 'download',
-                            ),
-                            LikeButton(
-                              mediaItem: null,
-                              data: entry,
-                            ),
-                            SongTileTrailingMenu(data: entry),
-                          ],
-                        ),
-                        onTap: () {
-                          PlayerInvoke.init(
-                            songsList: songList,
-                            index: songList.indexWhere(
-                              (element) => element == entry,
-                            ),
-                            isOffline: false,
-                          );
-                        },
-                      );
-                    }),
-                  ]),
+                    ],
+                  ),
                 ),
               ),
       ),

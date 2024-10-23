@@ -653,4 +653,18 @@ class SaavnAPI {
     }
     return {};
   }
+
+  Future<List> getAlbumRecommendations(String albumId) async {
+    final String params = 'albumid=$albumId&${endpoints["getAlbumReco"]}';
+    try {
+      final res = await getResponse(params);
+      if (res.statusCode == 200) {
+        final List data = json.decode(res.body) as List;
+        return data;
+      }
+    } catch (e) {
+      Logger.root.severe('Error in getAlbumRecommendations: $e');
+    }
+    return [];
+  }
 }
