@@ -342,7 +342,7 @@ class _SongsListPageState extends State<SongsListPage> {
                             widget.listItem['id'].toString(),
                           ),
                           builder: (context, snapshot) => snapshot.hasData
-                              ? snapshot.data! != []
+                              ? snapshot.data!.isNotEmpty
                                   ? Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
