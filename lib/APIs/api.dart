@@ -255,13 +255,19 @@ class SaavnAPI {
     return [];
   }
 
-  Future<List<String>> getTopSearches() async {
+  Future<List<Map>> getTopSearches() async {
     try {
       final res = await getResponse(endpoints['topSearches']!);
       if (res.statusCode == 200) {
         final List getMain = json.decode(res.body) as List;
         return getMain.map((element) {
-          return element['title'].toString();
+          return {
+            'id': element['id'].toString(),
+            'title': element['title'].toString(),
+            'type': element['type'].toString(),
+            'image': element['image'].toString(),
+            'mini_obj': true,
+          };
         }).toList();
       }
     } catch (e) {
