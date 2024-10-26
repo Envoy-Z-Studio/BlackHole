@@ -160,7 +160,10 @@ class BouncyPlaylistHeaderScrollView extends StatelessWidget {
                                       secondarySubtitle!,
                                       softWrap: false,
                                       overflow: TextOverflow.ellipsis,
-                                      maxLines: 2,
+                                      maxLines: onShuffleTap == null &&
+                                              onPlayTap == null
+                                          ? 10
+                                          : 2,
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Theme.of(context)
@@ -168,6 +171,7 @@ class BouncyPlaylistHeaderScrollView extends StatelessWidget {
                                             .bodySmall!
                                             .color,
                                       ),
+                                      textAlign: TextAlign.justify,
                                     ),
                                   ),
                                 Row(

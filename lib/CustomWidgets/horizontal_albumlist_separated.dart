@@ -28,7 +28,7 @@ class HorizontalAlbumsListSeparated extends StatelessWidget {
       return '';
     } else if (type == 'playlist' || type == 'radio_station') {
       return formatString(item['subtitle']?.toString());
-    } else if (type == 'song') {
+    } else if (type == 'song' || type == 'episode') {
       return formatString(item['artist']?.toString());
     } else {
       if (item['subtitle'] != null) {

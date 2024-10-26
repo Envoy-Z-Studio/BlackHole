@@ -14,6 +14,7 @@ import 'package:blackhole/CustomWidgets/song_tile_trailing_menu.dart';
 import 'package:blackhole/Helpers/extensions.dart';
 import 'package:blackhole/Models/image_quality.dart';
 import 'package:blackhole/Models/url_image_generator.dart';
+import 'package:blackhole/Screens/Shows/show.dart';
 import 'package:blackhole/Services/player_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -47,9 +48,11 @@ class _SongsListPageState extends State<SongsListPage> {
     _fetchSongs();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >=
-                  _scrollController.position.maxScrollExtent &&
-              widget.listItem['type'].toString() == 'songs' ||
-          widget.listItem['type'].toString() == 'top-songs' && !loading) {
+              _scrollController.position.maxScrollExtent &&
+          (widget.listItem['type'].toString() == 'songs' ||
+              widget.listItem['type'].toString() == 'top-songs' ||
+              widget.listItem['type'].toString() == 'season') &&
+          !loading) {
         page += 1;
         _fetchSongs();
       }
@@ -170,7 +173,29 @@ class _SongsListPageState extends State<SongsListPage> {
           )
               .then((value) {
             setState(() {
-              songList = value['songs'] as List;
+              songList = [value['show']];
+              fetched = true;
+              loading = false;
+            });
+
+            if (value['error'] != null && value['error'].toString() != '') {
+              ShowSnackBar().showSnackBar(
+                context,
+                'Error: ${value["error"]}',
+                duration: const Duration(seconds: 3),
+              );
+            }
+          });
+        case 'season':
+          SaavnAPI()
+              .getShowEpisodes(
+            widget.listItem['id'].toString(),
+            page,
+            widget.listItem['season_number'].toString(),
+          )
+              .then((value) {
+            setState(() {
+              songList.addAll(value['episodes'] as List);
               fetched = true;
               loading = false;
             });
@@ -253,20 +278,29 @@ class _SongsListPageState extends State<SongsListPage> {
                 ],
                 title:
                     widget.listItem['title']?.toString().unescape() ?? 'Songs',
-                subtitle: '${songList.length} Songs',
-                secondarySubtitle: widget.listItem['subTitle']?.toString() ??
-                    widget.listItem['subtitle']?.toString(),
-                onPlayTap: () => PlayerInvoke.init(
-                  songsList: songList,
-                  index: 0,
-                  isOffline: false,
-                ),
-                onShuffleTap: () => PlayerInvoke.init(
-                  songsList: songList,
-                  index: 0,
-                  isOffline: false,
-                  shuffle: true,
-                ),
+                subtitle: widget.listItem['type'] == 'show'
+                    ? widget.listItem['subTitle']?.toString() ??
+                        widget.listItem['subtitle']?.toString()
+                    : '${songList.length} Songs',
+                secondarySubtitle: widget.listItem['type'] == 'show'
+                    ? songList[0]['show_details']['header_desc'].toString()
+                    : widget.listItem['subTitle']?.toString() ??
+                        widget.listItem['subtitle']?.toString(),
+                onPlayTap: widget.listItem['type'] == 'show'
+                    ? null
+                    : () => PlayerInvoke.init(
+                          songsList: songList,
+                          index: 0,
+                          isOffline: false,
+                        ),
+                onShuffleTap: widget.listItem['type'] == 'show'
+                    ? null
+                    : () => PlayerInvoke.init(
+                          songsList: songList,
+                          index: 0,
+                          isOffline: false,
+                          shuffle: true,
+                        ),
                 placeholderImage: 'assets/album.png',
                 imageUrl: UrlImageGetter([widget.listItem['image']?.toString()])
                     .mediumQuality,
@@ -281,7 +315,11 @@ class _SongsListPageState extends State<SongsListPage> {
                             bottom: 5.0,
                           ),
                           child: Text(
-                            AppLocalizations.of(context)!.songs,
+                            widget.listItem['type'] == 'show'
+                                ? 'Seasons'
+                                : widget.listItem['type'] == 'season'
+                                    ? 'Episodes'
+                                    : AppLocalizations.of(context)!.songs,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18.0,
@@ -289,53 +327,62 @@ class _SongsListPageState extends State<SongsListPage> {
                             ),
                           ),
                         ),
-                      ...songList.map((entry) {
-                        return ListTile(
-                          contentPadding: const EdgeInsets.only(left: 15.0),
-                          title: Text(
-                            '${entry["title"]}',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w500,
+                      if (widget.listItem['type'] == 'show')
+                        SeasonsList(
+                          songList[0]['seasons'] as List,
+                          widget.listItem['id'].toString(),
+                        ),
+                      if (widget.listItem['type'] != 'show' &&
+                          widget.listItem['type'] != 'season')
+                        ...songList.map((entry) {
+                          return ListTile(
+                            contentPadding: const EdgeInsets.only(left: 15.0),
+                            title: Text(
+                              '${entry["title"]}',
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                          onLongPress: () {
-                            copyToClipboard(
-                              context: context,
-                              text: '${entry["title"]}',
-                            );
-                          },
-                          subtitle: Text(
-                            '${entry["subtitle"]}',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          leading:
-                              imageCard(imageUrl: entry['image'].toString()),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              DownloadButton(
-                                data: entry as Map,
-                                icon: 'download',
-                              ),
-                              LikeButton(
-                                mediaItem: null,
-                                data: entry,
-                              ),
-                              SongTileTrailingMenu(data: entry),
-                            ],
-                          ),
-                          onTap: () {
-                            PlayerInvoke.init(
-                              songsList: songList,
-                              index: songList.indexWhere(
-                                (element) => element == entry,
-                              ),
-                              isOffline: false,
-                            );
-                          },
-                        );
-                      }),
+                            onLongPress: () {
+                              copyToClipboard(
+                                context: context,
+                                text: '${entry["title"]}',
+                              );
+                            },
+                            subtitle: Text(
+                              '${entry["subtitle"]}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            leading:
+                                imageCard(imageUrl: entry['image'].toString()),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                DownloadButton(
+                                  data: entry as Map,
+                                  icon: 'download',
+                                ),
+                                LikeButton(
+                                  mediaItem: null,
+                                  data: entry,
+                                ),
+                                SongTileTrailingMenu(data: entry),
+                              ],
+                            ),
+                            onTap: () {
+                              PlayerInvoke.init(
+                                songsList: songList,
+                                index: songList.indexWhere(
+                                  (element) => element == entry,
+                                ),
+                                isOffline: false,
+                              );
+                            },
+                          );
+                        }),
+                      if (widget.listItem['type'] == 'season')
+                        EpisodesList(songList),
                       if (widget.listItem['type'] == 'album')
                         FutureBuilder(
                           future: SaavnAPI().getAlbumRecommendations(

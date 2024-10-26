@@ -32,6 +32,7 @@ class SaavnAPI {
     'artistOtherTopSongs':
         '__call=search.artistOtherTopSongs', // still not used
     'artistDetails': '__call=artist.getArtistPageDetails',
+    'showEpisodes': '__call=show.getAllEpisodes',
   };
 
   Future<Response> getResponse(
@@ -163,10 +164,8 @@ class SaavnAPI {
             return getMain;
           }
           if (type == 'show') {
-            final List responseList = getMain['episodes'] as List;
             return {
-              'songs':
-                  await FormatResponse.formatSongsResponse(responseList, type),
+              'show': getMain,
             };
           }
           if (type == 'mix') {
@@ -317,8 +316,8 @@ class SaavnAPI {
     List searchedPlaylistList = [];
     List searchedArtistList = [];
     List searchedTopQueryList = [];
-    // List searchedShowList = [];
-    // List searchedEpisodeList = [];
+    List searchedShowList = [];
+    List searchedEpisodeList = [];
 
     final String params =
         '__call=autocomplete.get&cc=in&includeMetaTags=1&query=$searchQuery';
@@ -335,11 +334,11 @@ class SaavnAPI {
       final List artistResponseList = getMain['artists']['data'] as List;
       position[getMain['artists']['position'] as int] = 'Artists';
 
-      // final List showResponseList = getMain['shows']['data'] as List;
-      // position[getMain['shows']['position'] as int] = 'Podcasts';
+      final List showResponseList = getMain['shows']['data'] as List;
+      position[getMain['shows']['position'] as int] = 'Podcasts';
 
-      // final List episodeResponseList = getMain['episodes']['data'] as List;
-      // position[getMain['episodes']['position'] as int] = 'Episodes';
+      final List episodeResponseList = getMain['episodes']['data'] as List;
+      position[getMain['episodes']['position'] as int] = 'Episodes';
 
       final List topQuery = getMain['topquery']['data'] as List;
 
@@ -357,17 +356,19 @@ class SaavnAPI {
         result['Playlists'] = searchedPlaylistList;
       }
 
-      // searchedShowList =
-      //     await FormatResponse().formatAlbumResponse(showResponseList, 'show');
-      // if (searchedShowList.isNotEmpty) {
-      //   result['Podcasts'] = searchedShowList;
-      // }
+      searchedShowList =
+          await FormatResponse.formatAlbumResponse(showResponseList, 'show');
+      if (searchedShowList.isNotEmpty) {
+        result['Podcasts'] = searchedShowList;
+      }
 
-      // searchedEpisodeList = await FormatResponse()
-      //     .formatAlbumResponse(episodeResponseList, 'episode');
-      // if (searchedEpisodeList.isNotEmpty) {
-      //   result['Episodes'] = searchedEpisodeList;
-      // }
+      searchedEpisodeList = await FormatResponse.formatAlbumResponse(
+        episodeResponseList,
+        'episode',
+      );
+      if (searchedEpisodeList.isNotEmpty) {
+        result['Episodes'] = searchedEpisodeList;
+      }
 
       searchedArtistList = await FormatResponse.formatAlbumResponse(
         artistResponseList,
@@ -387,9 +388,10 @@ class SaavnAPI {
       }
 
       if (topQuery.isNotEmpty &&
-          (topQuery[0]['type'] != 'playlist' ||
-              topQuery[0]['type'] == 'artist' ||
-              topQuery[0]['type'] == 'album')) {
+              (topQuery[0]['type'] != 'playlist' ||
+                  topQuery[0]['type'] == 'artist' ||
+                  topQuery[0]['type'] == 'album') ||
+          topQuery[0]['type'] == 'show') {
         position[getMain['topquery']['position'] as int] = 'Top Result';
         position[getMain['songs']['position'] as int] = 'Songs';
 
@@ -403,6 +405,9 @@ class SaavnAPI {
           case 'playlist':
             searchedTopQueryList =
                 await FormatResponse.formatAlbumResponse(topQuery, 'playlist');
+          case 'show':
+            searchedTopQueryList =
+                await FormatResponse.formatAlbumResponse(topQuery, 'show');
           default:
             break;
         }
@@ -666,5 +671,28 @@ class SaavnAPI {
       Logger.root.severe('Error in getAlbumRecommendations: $e');
     }
     return [];
+  }
+
+  Future<Map> getShowEpisodes(
+    String showId,
+    int page,
+    String seasonNumber,
+  ) async {
+    final String params =
+        'show_id=$showId&n=10&p=${page + 1}&season_number=$seasonNumber&sort_order=desc&${endpoints["showEpisodes"]}';
+    try {
+      final res = await getResponse(params);
+      if (res.statusCode == 200) {
+        final List data = json.decode(res.body) as List;
+        return {'episodes': data};
+      }
+    } catch (e) {
+      Logger.root.severe('Error in getShowEpisodes: $e');
+      return {
+        'episodes': List.empty(),
+        'error': e,
+      };
+    }
+    return {};
   }
 }

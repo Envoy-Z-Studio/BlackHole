@@ -26,6 +26,8 @@ class MediaItemConverter {
       'quality': mediaItem.extras?['quality'],
       'perma_url': mediaItem.extras?['perma_url'],
       'expire_at': mediaItem.extras?['expire_at'],
+      'should_fetch_lyrics': mediaItem.extras?['should_fetch_lyrics'],
+      'type': mediaItem.extras?['type'],
     };
   }
 
@@ -69,6 +71,8 @@ class MediaItemConverter {
         'addedByAutoplay': addedByAutoplay,
         'autoplay': autoplay,
         'playlistBox': playlistBox,
+        'should_fetch_lyrics': song['should_fetch_lyrics'],
+        'type': song['type'],
       },
     );
   }

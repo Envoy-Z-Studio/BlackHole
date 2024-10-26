@@ -821,7 +821,7 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
 
     if (name == 'fastForward') {
       try {
-        const stepInterval = Duration(seconds: 10);
+        const stepInterval = Duration(seconds: 30);
         Duration newPosition = _player!.position + stepInterval;
         if (newPosition < Duration.zero) newPosition = Duration.zero;
         if (newPosition > _player!.duration!) newPosition = _player!.duration!;
@@ -833,7 +833,7 @@ class AudioPlayerHandlerImpl extends BaseAudioHandler
 
     if (name == 'rewind') {
       try {
-        const stepInterval = Duration(seconds: 10);
+        const stepInterval = Duration(seconds: 30);
         Duration newPosition = _player!.position - stepInterval;
         if (newPosition < Duration.zero) newPosition = Duration.zero;
         if (newPosition > _player!.duration!) newPosition = _player!.duration!;

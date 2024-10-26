@@ -438,6 +438,37 @@ class _SearchPageState extends State<SearchPage> {
                                               section['title'].toString();
                                           final List? items =
                                               section['items'] as List?;
+                                          String localizedTitle = title;
+                                          if (localizedTitle == 'Top Result') {
+                                            /* localizedTitle =
+                                                AppLocalizations.of(context)!
+                                                    .topResult; */
+                                          } else if (localizedTitle ==
+                                              'Artists') {
+                                            localizedTitle =
+                                                AppLocalizations.of(context)!
+                                                    .artists;
+                                          } else if (localizedTitle ==
+                                              'Songs') {
+                                            localizedTitle =
+                                                AppLocalizations.of(context)!
+                                                    .songs;
+                                          } else if (localizedTitle ==
+                                              'Podcasts') {
+                                            /* localizedTitle =
+                                                AppLocalizations.of(context)!
+                                                    .podcasts; */
+                                          } else if (localizedTitle ==
+                                              'Albums') {
+                                            localizedTitle =
+                                                AppLocalizations.of(context)!
+                                                    .albums;
+                                          } else if (localizedTitle ==
+                                              'PLaylists') {
+                                            localizedTitle =
+                                                AppLocalizations.of(context)!
+                                                    .playlists;
+                                          }
 
                                           if (items == null || items.isEmpty) {
                                             return const SizedBox();
@@ -456,7 +487,7 @@ class _SearchPageState extends State<SearchPage> {
                                                           .spaceBetween,
                                                   children: [
                                                     Text(
-                                                      title,
+                                                      localizedTitle,
                                                       style: TextStyle(
                                                         color: Theme.of(context)
                                                             .colorScheme

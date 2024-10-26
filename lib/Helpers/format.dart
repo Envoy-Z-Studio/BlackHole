@@ -442,6 +442,7 @@ class FormatResponse {
             : response['description'].toString().unescape(),
         'title': response['title'].toString().unescape(),
         'image': getImageUrl(response['image'].toString()),
+        'perma_url': response['perma_url'].toString(),
       };
     } catch (e) {
       Logger.root.severe('Error inside formatSingleShowResponse: $e');
@@ -536,5 +537,63 @@ class FormatResponse {
     }
     list.removeWhere((value) => value == null);
     return list;
+  }
+
+  static Future<List> formatEpisodesInList(List list) async {
+    if (list.isNotEmpty) {
+      for (int i = 0; i < list.length; i++) {
+        final Map item = list[i] as Map;
+        if (item['type'] == 'episode') {
+          if (item['mini_obj'] as bool? ?? false) {
+            Map cachedDetails = Hive.box('cache')
+                .get(item['id'].toString(), defaultValue: {}) as Map;
+            if (cachedDetails.isEmpty) {
+              cachedDetails =
+                  await SaavnAPI().fetchSongDetails(item['id'].toString());
+              Hive.box('cache')
+                  .put(cachedDetails['id'].toString(), cachedDetails);
+            }
+            list[i] = cachedDetails;
+            continue;
+          }
+          if (item['formated'] == null) {
+            list[i] = formatSingleEpisodeResponse(item);
+          } else {
+            list[i] = item;
+          }
+        }
+      }
+    }
+    list.removeWhere((value) => value == null);
+    return list;
+  }
+
+  static Map formatSingleEpisodeResponse(Map response) {
+    try {
+      return {
+        'id': response['id'],
+        'type': response['type'],
+        'year': response['year'],
+        'duration': response['more_info']['duration'],
+        'language': response['language'].toString().capitalize(),
+        'genre': response['language'].toString().capitalize(),
+        'album': response['more_info']['season_title'].toString().capitalize(),
+        'has_lyrics': false,
+        'release_date': response['more_info']['release_date'],
+        'subtitle': response['subtitle'].toString().unescape(),
+        'title': response['title'].toString().unescape(),
+        'description':
+            response['more_info']['description'].toString().unescape(),
+        'artist': response['more_info']['show_title'].toString().unescape(),
+        'image': getImageUrl(response['image'].toString()),
+        'perma_url': response['perma_url'],
+        'url': decode(response['more_info']['encrypted_media_url'].toString()),
+        'formated': true,
+        'should_fetch_lyrics': false,
+      };
+    } catch (e) {
+      Logger.root.severe('Error inside formatSingleEpisodeResponse: $e');
+      return {'Error': e};
+    }
   }
 }
