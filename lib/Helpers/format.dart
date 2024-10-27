@@ -35,9 +35,10 @@ class FormatResponse {
         case 'song':
         case 'album':
         case 'playlist':
-        case 'show':
         case 'mix':
           response = await formatSingleSongResponse(responseList[i] as Map);
+        case 'show':
+          response = await formatSingleShowResponse(responseList[i] as Map);
         default:
           break;
       }
@@ -441,7 +442,9 @@ class FormatResponse {
             ? response['subtitle'].toString().unescape()
             : response['description'].toString().unescape(),
         'title': response['title'].toString().unescape(),
-        'image': getImageUrl(response['image'].toString()),
+        'image': response['image'] == null
+            ? getImageUrl(response['image_file_url'].toString())
+            : getImageUrl(response['image'].toString()),
         'perma_url': response['perma_url'].toString(),
       };
     } catch (e) {

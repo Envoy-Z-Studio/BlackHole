@@ -24,6 +24,7 @@ class SaavnAPI {
     'playlistDetails': '__call=playlist.getDetails',
     'albumDetails': '__call=content.getAlbumDetails',
     'getResults': '__call=search.getResults',
+    'getMoreResults': '__call=search.getMoreResults',
     'albumResults': '__call=search.getAlbumResults',
     'artistResults': '__call=search.getArtistResults',
     'playlistResults': '__call=search.getPlaylistResults',
@@ -312,6 +313,42 @@ class SaavnAPI {
     }
   }
 
+  Future<Map> fetchPodcastSearchResults({
+    required String searchQuery,
+    int count = 20,
+    int page = 1,
+  }) async {
+    final String params =
+        'p=$page&query=$searchQuery&n=$count&${endpoints["getMoreResults"]}&params={"type":"podcasts"}';
+    try {
+      final res = await getResponse(params);
+      if (res.statusCode == 200) {
+        final Map getMain = json.decode(res.body) as Map;
+        final List responseList = getMain['results'] as List;
+        final finalSongs =
+            await FormatResponse.formatSongsResponse(responseList, 'show');
+        if (finalSongs.length > count) {
+          finalSongs.removeRange(count, finalSongs.length);
+        }
+        return {
+          'shows': finalSongs,
+          'error': '',
+        };
+      } else {
+        return {
+          'shows': List.empty(),
+          'error': res.body,
+        };
+      }
+    } catch (e) {
+      Logger.root.severe('Error in fetchPodcastSearchResults: $e');
+      return {
+        'songs': List.empty(),
+        'error': e,
+      };
+    }
+  }
+
   Future<List<Map<String, dynamic>>> fetchSearchResults(
     String searchQuery,
   ) async {
@@ -394,10 +431,10 @@ class SaavnAPI {
       }
 
       if (topQuery.isNotEmpty &&
-              (topQuery[0]['type'] != 'playlist' ||
-                  topQuery[0]['type'] == 'artist' ||
-                  topQuery[0]['type'] == 'album') ||
-          topQuery[0]['type'] == 'show') {
+          (topQuery[0]['type'] != 'playlist' ||
+              topQuery[0]['type'] == 'artist' ||
+              topQuery[0]['type'] == 'album' ||
+              topQuery[0]['type'] == 'show')) {
         position[getMain['topquery']['position'] as int] = 'Top Result';
         position[getMain['songs']['position'] as int] = 'Songs';
 

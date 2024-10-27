@@ -352,27 +352,22 @@ class _SearchPageState extends State<SearchPage> {
                               children: [
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
                                     vertical: 10,
                                   ),
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        AppLocalizations.of(context)!
-                                            .trendingSearch,
-                                        style: TextStyle(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .secondary,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ],
+                                  child: Text(
+                                    AppLocalizations.of(context)!
+                                        .trendingSearch,
+                                    style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                                 ),
                                 Align(
-                                  alignment: Alignment.topLeft,
+                                  alignment: Alignment.topCenter,
                                   child: Wrap(
                                     children: List<Widget>.generate(
                                       value.length,
@@ -848,7 +843,9 @@ class _SearchPageState extends State<SearchPage> {
                                                                           );
                                                                         }
                                                                         if (title ==
-                                                                            'Songs') {
+                                                                                'Songs' ||
+                                                                            title ==
+                                                                                'Podcasts') {
                                                                           Navigator
                                                                               .push(
                                                                             context,
@@ -863,7 +860,7 @@ class _SearchPageState extends State<SearchPage> {
                                                                                 listItem: {
                                                                                   'id': query == '' ? widget.query : query,
                                                                                   'title': title,
-                                                                                  'type': 'songs',
+                                                                                  'type': title == 'Songs' ? 'songs' : 'shows',
                                                                                 },
                                                                               ),
                                                                             ),

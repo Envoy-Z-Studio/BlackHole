@@ -12,6 +12,7 @@ import 'package:blackhole/CustomWidgets/playlist_popupmenu.dart';
 import 'package:blackhole/CustomWidgets/snackbar.dart';
 import 'package:blackhole/CustomWidgets/song_tile_trailing_menu.dart';
 import 'package:blackhole/Helpers/extensions.dart';
+import 'package:blackhole/Helpers/image_resolution_modifier.dart';
 import 'package:blackhole/Models/image_quality.dart';
 import 'package:blackhole/Models/url_image_generator.dart';
 import 'package:blackhole/Screens/Shows/show.dart';
@@ -51,7 +52,8 @@ class _SongsListPageState extends State<SongsListPage> {
               _scrollController.position.maxScrollExtent &&
           (widget.listItem['type'].toString() == 'songs' ||
               widget.listItem['type'].toString() == 'top-songs' ||
-              widget.listItem['type'].toString() == 'season') &&
+              widget.listItem['type'].toString() == 'season' ||
+              widget.listItem['type'].toString() == 'show') &&
           !loading) {
         page += 1;
         _fetchSongs();
@@ -179,6 +181,26 @@ class _SongsListPageState extends State<SongsListPage> {
             });
 
             if (value['error'] != null && value['error'].toString() != '') {
+              ShowSnackBar().showSnackBar(
+                context,
+                'Error: ${value["error"]}',
+                duration: const Duration(seconds: 3),
+              );
+            }
+          });
+        case 'shows':
+          SaavnAPI()
+              .fetchPodcastSearchResults(
+            searchQuery: widget.listItem['id'].toString(),
+            page: page,
+          )
+              .then((value) {
+            setState(() {
+              songList.addAll(value['shows'] as List);
+              fetched = true;
+              loading = false;
+            });
+            if (value['error'].toString() != '') {
               ShowSnackBar().showSnackBar(
                 context,
                 'Error: ${value["error"]}',
@@ -319,7 +341,9 @@ class _SongsListPageState extends State<SongsListPage> {
                                 ? 'Seasons'
                                 : widget.listItem['type'] == 'season'
                                     ? 'Episodes'
-                                    : AppLocalizations.of(context)!.songs,
+                                    : widget.listItem['type'] == 'season'
+                                        ? AppLocalizations.of(context)!.podcasts
+                                        : AppLocalizations.of(context)!.songs,
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18.0,
@@ -356,28 +380,67 @@ class _SongsListPageState extends State<SongsListPage> {
                             ),
                             leading:
                                 imageCard(imageUrl: entry['image'].toString()),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                DownloadButton(
-                                  data: entry as Map,
-                                  icon: 'download',
-                                ),
-                                LikeButton(
-                                  mediaItem: null,
-                                  data: entry,
-                                ),
-                                SongTileTrailingMenu(data: entry),
-                              ],
-                            ),
+                            trailing: widget.listItem['type'] == 'shows'
+                                ? null
+                                : Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      DownloadButton(
+                                        data: entry as Map,
+                                        icon: 'download',
+                                      ),
+                                      LikeButton(
+                                        mediaItem: null,
+                                        data: entry,
+                                      ),
+                                      SongTileTrailingMenu(data: entry),
+                                    ],
+                                  ),
                             onTap: () {
-                              PlayerInvoke.init(
-                                songsList: songList,
-                                index: songList.indexWhere(
-                                  (element) => element == entry,
-                                ),
-                                isOffline: false,
-                              );
+                              widget.listItem['type'] == 'shows'
+                                  ? Navigator.push(
+                                      context,
+                                      PageRouteBuilder(
+                                        opaque: false,
+                                        pageBuilder: (
+                                          _,
+                                          __,
+                                          ___,
+                                        ) =>
+                                            SongsListPage(
+                                          listItem: {
+                                            'id': entry['id'],
+                                            'type': entry['type'],
+                                            'album': entry['title']
+                                                .toString()
+                                                .unescape(),
+                                            'subtitle':
+                                                entry['description'] == null
+                                                    ? entry['subtitle']
+                                                        .toString()
+                                                        .unescape()
+                                                    : entry['description']
+                                                        .toString()
+                                                        .unescape(),
+                                            'title': entry['title']
+                                                .toString()
+                                                .unescape(),
+                                            'image': getImageUrl(
+                                              entry['image'].toString(),
+                                            ),
+                                            'perma_url':
+                                                entry['perma_url'].toString(),
+                                          },
+                                        ),
+                                      ),
+                                    )
+                                  : PlayerInvoke.init(
+                                      songsList: songList,
+                                      index: songList.indexWhere(
+                                        (element) => element == entry,
+                                      ),
+                                      isOffline: false,
+                                    );
                             },
                           );
                         }),

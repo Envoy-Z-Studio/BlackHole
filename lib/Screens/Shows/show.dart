@@ -174,6 +174,8 @@ class EpisodesList extends StatelessWidget {
                           child: Text(
                             entry['title'].toString(),
                             textAlign: TextAlign.justify,
+                            maxLines: 5,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ),
@@ -195,41 +197,44 @@ class EpisodesList extends StatelessWidget {
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 5, right: 5, bottom: 7),
-                  child: GestureDetector(
-                    onTap: () => showDialog(
-                      context: context,
-                      builder: (context) => Dialog(
-                        child: Padding(
-                          padding: const EdgeInsets.all(15),
-                          child: Text(
-                            entry['more_info']['description']
-                                .toString()
-                                .replaceAll('&amp;', '&')
-                                .replaceAll('&#039;', "'")
-                                .replaceAll('&quot;', '"'),
-                            textAlign: TextAlign.justify,
+                if (entry['more_info'] != null)
+                  if (entry['more_info']['description'] != null)
+                    Padding(
+                      padding:
+                          const EdgeInsets.only(left: 5, right: 5, bottom: 7),
+                      child: GestureDetector(
+                        onTap: () => showDialog(
+                          context: context,
+                          builder: (context) => Dialog(
+                            child: Padding(
+                              padding: const EdgeInsets.all(15),
+                              child: Text(
+                                entry['more_info']['description']
+                                    .toString()
+                                    .replaceAll('&amp;', '&')
+                                    .replaceAll('&#039;', "'")
+                                    .replaceAll('&quot;', '"'),
+                                textAlign: TextAlign.justify,
+                              ),
+                            ),
                           ),
                         ),
+                        child: Text(
+                          entry['more_info']['description']
+                              .toString()
+                              .replaceAll('&amp;', '&')
+                              .replaceAll('&#039;', "'")
+                              .replaceAll('&quot;', '"'),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Theme.of(context).textTheme.bodySmall!.color,
+                          ),
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.justify,
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      entry['more_info']['description']
-                          .toString()
-                          .replaceAll('&amp;', '&')
-                          .replaceAll('&#039;', "'")
-                          .replaceAll('&quot;', '"'),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).textTheme.bodySmall!.color,
-                      ),
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.justify,
-                    ),
-                  ),
-                ),
+                    )
               ],
             ),
           ),

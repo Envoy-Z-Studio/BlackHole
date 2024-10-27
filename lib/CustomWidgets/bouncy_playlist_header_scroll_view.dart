@@ -249,7 +249,7 @@ class BouncyPlaylistHeaderScrollView extends StatelessWidget {
                                           ),
                                         ),
                                       ),
-                                    const SizedBox(width: 15),
+                                    const SizedBox(width: 10),
                                     if (onShuffleTap != null)
                                       Expanded(
                                         child: GestureDetector(
