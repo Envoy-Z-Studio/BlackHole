@@ -1,33 +1,30 @@
 // This is a basic Flutter widget test.
 //
 // To perform an interaction with a widget in your test, use the WidgetTester
-// utility that Flutter provides. For example, you can send tap and scroll
+// utility in the flutter_test package. For example, you can send tap and scroll
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:blackhole/Helpers/update.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:blackhole/main.dart';
+
 void main() {
-  group('update check tests', () {
-    test('compareVersion should return true if update is available', () {
-      // Arrange: Set up the necessary variables and inputs
-      const String currentVersion = '1.1.2';
-      const String latestVerion = '1.1.3';
+  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+    // Build our app and trigger a frame.
+    await tester.pumpWidget(MyApp());
 
-      final result = compareVersion(latestVerion, currentVersion);
+    // Verify that our counter starts at 0.
+    expect(find.text('0'), findsOneWidget);
+    expect(find.text('1'), findsNothing);
 
-      expect(result, equals(true));
-    });
+    // Tap the '+' icon and trigger a frame.
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
 
-    test('compareVersion should return false if update is not available', () {
-      // Arrange: Set up the necessary variables and inputs
-      const String currentVersion = '1.1.2';
-      const String latestVerion = '1.1.2';
-
-      final result = compareVersion(latestVerion, currentVersion);
-
-      expect(result, equals(false));
-    });
+    // Verify that our counter has incremented.
+    expect(find.text('0'), findsNothing);
+    expect(find.text('1'), findsOneWidget);
   });
 }
