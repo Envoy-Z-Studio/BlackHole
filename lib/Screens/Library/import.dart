@@ -148,7 +148,7 @@ Future<void> connectToSpotify(
       mode: LaunchMode.externalApplication,
     );
     final appLinks = AppLinks();
-    appLinks.allUriLinkStream.listen(
+    appLinks.uriLinkStream.listen(
       (uri) async {
         final link = uri.toString();
         if (link.contains('code=')) {
@@ -386,7 +386,6 @@ Future<void> fetchPlaylists(
   final List spotifyPlaylists =
       await SpotifyApi().getUserPlaylists(accessToken);
   showModalBottomSheet(
-    isDismissible: true,
     backgroundColor: Colors.transparent,
     context: context,
     builder: (BuildContext contxt) {

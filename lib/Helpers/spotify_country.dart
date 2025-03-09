@@ -13,7 +13,6 @@ class SpotifyCountry {
     }
 
     await showModalBottomSheet(
-      isDismissible: true,
       backgroundColor: Colors.transparent,
       context: context,
       builder: (BuildContext context) {

@@ -464,7 +464,7 @@ class Download with ChangeNotifier {
                     ? null
                     : int.parse(data['year'].toString()),
                 durationMs: int.parse(data['duration'].toString()) * 1000,
-                fileSize: file.lengthSync(),
+                fileSize: BigInt.from(file.lengthSync()),
                 picture: Picture(
                   data: bytes2,
                   mimeType: 'image/jpeg',
