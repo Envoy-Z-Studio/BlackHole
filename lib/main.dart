@@ -14,7 +14,6 @@ import 'package:blackhole/Screens/Player/audioplayer.dart';
 import 'package:blackhole/Theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_displaymode/flutter_displaymode.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get_it/get_it.dart';
@@ -22,6 +21,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:logging/logging.dart';
 import 'package:metadata_god/metadata_god.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:sizer/sizer.dart';
 
@@ -41,15 +41,24 @@ Future<void> main() async {
       limit: box['limit'] as bool? ?? false,
     );
   }
+
   if (Platform.isAndroid) {
-    setOptimalDisplayMode();
+    _requestStoragePermissions();
   }
   await startService();
   runApp(MyApp());
 }
 
-Future<void> setOptimalDisplayMode() async {
-  await FlutterDisplayMode.setHighRefreshRate();
+/// Requests media permissions for Android.
+/// On Android 13+ (API 33), requests specific access.
+Future<void> _requestStoragePermissions() async {
+  final statuses = await [Permission.audio].request();
+  final bool allGranted = statuses.values.every((status) => status.isGranted);
+  if (allGranted) {
+    Logger.root.info('Permissions granted.');
+  } else {
+    Logger.root.warning('Permissions not granted.');
+  }
 }
 
 Future<void> startService() async {
