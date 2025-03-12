@@ -12,6 +12,7 @@ import 'package:blackhole/Screens/Home/home_screen.dart';
 import 'package:blackhole/Screens/Library/library.dart';
 import 'package:blackhole/Screens/LocalMusic/downed_songs.dart';
 import 'package:blackhole/Screens/LocalMusic/downed_songs_desktop.dart';
+import 'package:blackhole/Screens/Player/audioplayer.dart';
 import 'package:blackhole/Screens/Settings/new_settings_page.dart';
 import 'package:blackhole/Screens/Top Charts/top.dart';
 import 'package:blackhole/Screens/YouTube/youtube_home.dart';
@@ -25,6 +26,8 @@ import 'package:logging/logging.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 class HomePage extends StatefulWidget {
   @override
@@ -50,7 +53,6 @@ class _HomePageState extends State<HomePage> {
     defaultValue: false,
   ) as bool;
 
-  // Page controller to handle page navigation
   final PageController _pageController = PageController();
 
   void callback() {
@@ -64,7 +66,6 @@ class _HomePageState extends State<HomePage> {
 
   void onItemTapped(int index) {
     _selectedIndex.value = index;
-    // Update the page controller (for seamless page transitions)
     _pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 300),
@@ -377,7 +378,8 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 onTap: () {
                                   Navigator.pop(context);
-                                  Navigator.pushNamed(context, '/downloads');
+                                  Navigator.pushNamed(
+                                      navigatorKey.currentContext!, '/downloads',);
                                 },
                               ),
                               ListTile(
@@ -393,7 +395,8 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 onTap: () {
                                   Navigator.pop(context);
-                                  Navigator.pushNamed(context, '/playlists');
+                                  Navigator.pushNamed(
+                                      navigatorKey.currentContext!, '/playlists',);
                                 },
                               ),
                               ListTile(
@@ -439,7 +442,7 @@ class _HomePageState extends State<HomePage> {
                                 ),
                                 onTap: () {
                                   Navigator.pop(context);
-                                  Navigator.pushNamed(context, '/about');
+                                  Navigator.pushNamed(navigatorKey.currentContext!, '/about');
                                 },
                               ),
                             ],
@@ -550,25 +553,19 @@ class _HomePageState extends State<HomePage> {
               child: Column(
                 children: [
                   Expanded(
-                    child: PageView( //Page view to navigate between pages
+                    child: PageView(
                       controller: _pageController,
-                      physics: const NeverScrollableScrollPhysics(), // Disable swipe
-                      children: _buildScreens(context), // Pass the context
+                      physics: const NeverScrollableScrollPhysics(),
+                      children: _buildScreens(context),
                     ),
                   ),
-
-                  //Add MiniPlayer here before the navigation bar
                   miniplayer,
-
-                  if (!rotated)  //Only show the crystal navbar if not rotated
+                  if (!rotated)
                     ValueListenableBuilder<int>(
                       valueListenable: _selectedIndex,
                       builder: (context, indexValue, child) {
                         return CrystalNavigationBar(
                           backgroundColor: Theme.of(context).cardColor.withOpacity(0.8),
-                          //shadowColor: Colors.red,
-                          //height: 100,
-
                           items: _navBarItems(context),
                           currentIndex: indexValue,
                           onTap: (index) {
@@ -576,7 +573,7 @@ class _HomePageState extends State<HomePage> {
                           },
                         );
                       },
-                    )
+                    ),
                 ],
               ),
             ),
@@ -622,7 +619,7 @@ class _HomePageState extends State<HomePage> {
     return sectionsToShow.map((e) {
       switch (e) {
         case 'Home':
-          return const HomeScreen();
+          return const HomeScreenWithNavigation();
         case 'Top Charts':
           return TopCharts(
             pageController: _pageController,
@@ -635,5 +632,77 @@ class _HomePageState extends State<HomePage> {
           return NewSettingsPage(callback: callback);
       }
     }).toList();
+  }
+}
+
+class HomeScreenWithNavigation extends StatelessWidget {
+  const HomeScreenWithNavigation({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      key: navigatorKey,
+      onGenerateRoute: (routeSettings) {
+        if (routeSettings.name == '/player') {
+          return MaterialPageRoute(
+            builder: (context) => const PlayScreen(),
+          );
+        }
+        return MaterialPageRoute(
+          builder: (context) => const HomeScreen(),
+        );
+      },
+    );
+  }
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'BlackHole',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      navigatorKey: navigatorKey,
+      onGenerateRoute: (settings) {
+        if (settings.name == '/player') {
+          return MaterialPageRoute(
+            builder: (context) => const PlayScreen(),
+          );
+        }
+        if (settings.name == '/downloads') {
+          return MaterialPageRoute(
+            builder: (context) => (Platform.isWindows ||
+                    Platform.isLinux ||
+                    Platform.isMacOS)
+                ? const DownloadedSongsDesktop()
+                : const DownloadedSongs(
+                    showPlaylists: true,
+                  ),
+          );
+        }
+        if (settings.name == '/playlists') {
+          return MaterialPageRoute(
+            builder: (context) => (Platform.isWindows ||
+                    Platform.isLinux ||
+                    Platform.isMacOS)
+                ? const DownloadedSongsDesktop()
+                : const DownloadedSongs(
+                    showPlaylists: true,
+                  ),
+          );
+        }
+        if (settings.name == '/about') {
+          return MaterialPageRoute(
+            builder: (context) => const LibraryPage(),
+          );
+        }
+        return null;
+      },
+      home: HomePage(),
+    );
   }
 }
