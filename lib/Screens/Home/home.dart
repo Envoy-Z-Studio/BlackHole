@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:blackhole/CustomWidgets/bottom_nav_bar.dart';
 import 'package:blackhole/CustomWidgets/drawer.dart';
 import 'package:blackhole/CustomWidgets/gradient_containers.dart';
 import 'package:blackhole/CustomWidgets/miniplayer.dart';
@@ -8,18 +7,16 @@ import 'package:blackhole/CustomWidgets/snackbar.dart';
 import 'package:blackhole/Helpers/backup_restore.dart';
 import 'package:blackhole/Helpers/downloads_checker.dart';
 import 'package:blackhole/Helpers/github.dart';
-import 'package:blackhole/Helpers/route_handler.dart';
 import 'package:blackhole/Helpers/update.dart';
-import 'package:blackhole/Screens/Common/routes.dart';
 import 'package:blackhole/Screens/Home/home_screen.dart';
 import 'package:blackhole/Screens/Library/library.dart';
 import 'package:blackhole/Screens/LocalMusic/downed_songs.dart';
 import 'package:blackhole/Screens/LocalMusic/downed_songs_desktop.dart';
-import 'package:blackhole/Screens/Player/audioplayer.dart';
 import 'package:blackhole/Screens/Settings/new_settings_page.dart';
 import 'package:blackhole/Screens/Top Charts/top.dart';
 import 'package:blackhole/Screens/YouTube/youtube_home.dart';
 import 'package:blackhole/Services/ext_storage_provider.dart';
+import 'package:crystal_navigation_bar/crystal_navigation_bar.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -27,7 +24,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:logging/logging.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:persistent_bottom_nav_bar/persistent_bottom_nav_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
@@ -54,6 +50,9 @@ class _HomePageState extends State<HomePage> {
     defaultValue: false,
   ) as bool;
 
+  // Page controller to handle page navigation
+  final PageController _pageController = PageController();
+
   void callback() {
     sectionsToShow = Hive.box('settings').get(
       'sectionsToShow',
@@ -65,8 +64,11 @@ class _HomePageState extends State<HomePage> {
 
   void onItemTapped(int index) {
     _selectedIndex.value = index;
-    _controller.jumpToTab(
+    // Update the page controller (for seamless page transitions)
+    _pageController.animateToPage(
       index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
     );
   }
 
@@ -215,9 +217,6 @@ class _HomePageState extends State<HomePage> {
     downloadChecker();
   }
 
-  final PageController _pageController = PageController();
-  final PersistentTabController _controller = PersistentTabController();
-
   @override
   void initState() {
     super.initState();
@@ -226,7 +225,6 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    _controller.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -236,6 +234,7 @@ class _HomePageState extends State<HomePage> {
     final double screenWidth = MediaQuery.sizeOf(context).width;
     final bool rotated = MediaQuery.sizeOf(context).height < screenWidth;
     final miniplayer = MiniPlayer();
+
     return GradientContainer(
       child: Scaffold(
         appBar: AppBar(
@@ -548,131 +547,37 @@ class _HomePageState extends State<HomePage> {
                 },
               ),
             Expanded(
-              child: PersistentTabView.custom(
-                context,
-                controller: _controller,
-                itemCount: sectionsToShow.length,
-                navBarHeight: 60 +
-                    (rotated ? 0 : 70) +
-                    (useDense ? 0 : 10) +
-                    (rotated && useDense ? 10 : 0),
-                customWidget: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    miniplayer,
-                    if (!rotated)
-                      ValueListenableBuilder(
-                        valueListenable: _selectedIndex,
-                        builder: (
-                          BuildContext context,
-                          int indexValue,
-                          Widget? child,
-                        ) {
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 100),
-                            height: 60,
-                            child: CustomBottomNavBar(
-                              currentIndex: indexValue,
-                              backgroundColor: Theme.of(context).brightness ==
-                                      Brightness.dark
-                                  ? Colors.black.withOpacity(0.9)
-                                  : Colors.white.withOpacity(0.9),
-                              onTap: (index) {
-                                onItemTapped(index);
-                              },
-                              items: _navBarItems(context),
-                            ),
-                          );
-                        },
-                      ),
-                  ],
-                ),
-                screens: sectionsToShow.map((e) {
-                  switch (e) {
-                    case 'Home':
-                      return CustomNavBarScreen(
-                        routeAndNavigatorSettings: RouteAndNavigatorSettings(
-                          routes: namedRoutes,
-                          onGenerateRoute: (RouteSettings settings) {
-                            if (settings.name == '/player') {
-                              return PageRouteBuilder(
-                                opaque: false,
-                                pageBuilder: (_, __, ___) => const PlayScreen(),
-                              );
-                            }
-                            return HandleRoute.handleRoute(settings.name);
+              child: Column(
+                children: [
+                  Expanded(
+                    child: PageView( //Page view to navigate between pages
+                      controller: _pageController,
+                      physics: const NeverScrollableScrollPhysics(), // Disable swipe
+                      children: _buildScreens(context), // Pass the context
+                    ),
+                  ),
+
+                  //Add MiniPlayer here before the navigation bar
+                  miniplayer,
+
+                  if (!rotated)  //Only show the crystal navbar if not rotated
+                    ValueListenableBuilder<int>(
+                      valueListenable: _selectedIndex,
+                      builder: (context, indexValue, child) {
+                        return CrystalNavigationBar(
+                          backgroundColor: Theme.of(context).cardColor.withOpacity(0.8),
+                          //shadowColor: Colors.red,
+                          //height: 100,
+
+                          items: _navBarItems(context),
+                          currentIndex: indexValue,
+                          onTap: (index) {
+                            onItemTapped(index);
                           },
-                        ),
-                        screen: const HomeScreen(),
-                      );
-                    case 'Top Charts':
-                      return CustomNavBarScreen(
-                        routeAndNavigatorSettings: RouteAndNavigatorSettings(
-                          routes: namedRoutes,
-                          onGenerateRoute: (RouteSettings settings) {
-                            if (settings.name == '/player') {
-                              return PageRouteBuilder(
-                                opaque: false,
-                                pageBuilder: (_, __, ___) => const PlayScreen(),
-                              );
-                            }
-                            return HandleRoute.handleRoute(settings.name);
-                          },
-                        ),
-                        screen: TopCharts(
-                          pageController: _pageController,
-                        ),
-                      );
-                    case 'YouTube':
-                      return CustomNavBarScreen(
-                        routeAndNavigatorSettings: RouteAndNavigatorSettings(
-                          routes: namedRoutes,
-                          onGenerateRoute: (RouteSettings settings) {
-                            if (settings.name == '/player') {
-                              return PageRouteBuilder(
-                                opaque: false,
-                                pageBuilder: (_, __, ___) => const PlayScreen(),
-                              );
-                            }
-                            return HandleRoute.handleRoute(settings.name);
-                          },
-                        ),
-                        screen: const YouTube(),
-                      );
-                    case 'Library':
-                      return CustomNavBarScreen(
-                        routeAndNavigatorSettings: RouteAndNavigatorSettings(
-                          routes: namedRoutes,
-                          onGenerateRoute: (RouteSettings settings) {
-                            if (settings.name == '/player') {
-                              return PageRouteBuilder(
-                                opaque: false,
-                                pageBuilder: (_, __, ___) => const PlayScreen(),
-                              );
-                            }
-                            return HandleRoute.handleRoute(settings.name);
-                          },
-                        ),
-                        screen: const LibraryPage(),
-                      );
-                    default:
-                      return CustomNavBarScreen(
-                        routeAndNavigatorSettings: RouteAndNavigatorSettings(
-                          routes: namedRoutes,
-                          onGenerateRoute: (RouteSettings settings) {
-                            if (settings.name == '/player') {
-                              return PageRouteBuilder(
-                                opaque: false,
-                                pageBuilder: (_, __, ___) => const PlayScreen(),
-                              );
-                            }
-                            return HandleRoute.handleRoute(settings.name);
-                          },
-                        ),
-                        screen: NewSettingsPage(callback: callback),
-                      );
-                  }
-                }).toList(),
+                        );
+                      },
+                    )
+                ],
               ),
             ),
           ],
@@ -681,39 +586,53 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  List<CustomBottomNavBarItem> _navBarItems(BuildContext context) {
+  List<CrystalNavigationBarItem> _navBarItems(BuildContext context) {
     return sectionsToShow.map((section) {
       switch (section) {
         case 'Home':
-          return CustomBottomNavBarItem(
-            icon: const Icon(Icons.home_rounded),
-            title: Text(AppLocalizations.of(context)!.home),
+          return CrystalNavigationBarItem(
+            icon: Icons.home_rounded,
             selectedColor: Theme.of(context).colorScheme.secondary,
           );
         case 'Top Charts':
-          return CustomBottomNavBarItem(
-            icon: const Icon(Icons.trending_up_rounded),
-            title: Text(AppLocalizations.of(context)!.topCharts),
+          return CrystalNavigationBarItem(
+            icon: Icons.trending_up_rounded,
             selectedColor: Theme.of(context).colorScheme.secondary,
           );
         case 'YouTube':
-          return CustomBottomNavBarItem(
-            icon: const Icon(MdiIcons.youtube),
-            title: Text(AppLocalizations.of(context)!.youTube),
+          return CrystalNavigationBarItem(
+            icon: MdiIcons.youtube,
             selectedColor: Theme.of(context).colorScheme.secondary,
           );
         case 'Library':
-          return CustomBottomNavBarItem(
-            icon: const Icon(Icons.my_library_music_rounded),
-            title: Text(AppLocalizations.of(context)!.library),
+          return CrystalNavigationBarItem(
+            icon: Icons.my_library_music_rounded,
             selectedColor: Theme.of(context).colorScheme.secondary,
           );
         default:
-          return CustomBottomNavBarItem(
-            icon: const Icon(Icons.settings_rounded),
-            title: Text(AppLocalizations.of(context)!.settings),
+          return CrystalNavigationBarItem(
+            icon: Icons.settings_rounded,
             selectedColor: Theme.of(context).colorScheme.secondary,
           );
+      }
+    }).toList();
+  }
+
+  List<Widget> _buildScreens(BuildContext context) {
+    return sectionsToShow.map((e) {
+      switch (e) {
+        case 'Home':
+          return const HomeScreen();
+        case 'Top Charts':
+          return TopCharts(
+            pageController: _pageController,
+          );
+        case 'YouTube':
+          return const YouTube();
+        case 'Library':
+          return const LibraryPage();
+        default:
+          return NewSettingsPage(callback: callback);
       }
     }).toList();
   }

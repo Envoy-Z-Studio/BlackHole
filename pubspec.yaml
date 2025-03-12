@@ -18,6 +18,7 @@ dependencies:
   cached_network_image: ^3.3.1
   carousel_slider: ^5.0.0
   connectivity_plus: ^5.0.2
+  crystal_navigation_bar: ^1.0.4
   cupertino_icons: ^1.0.6
   dart_des: ^1.0.2
   device_info_plus: ^11.3.0
