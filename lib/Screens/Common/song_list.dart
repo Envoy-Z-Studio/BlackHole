@@ -35,7 +35,7 @@ class SongsListPage extends StatefulWidget {
 }
 
 class _SongsListPageState extends State<SongsListPage> {
-  int page = 0; // TODO: fix
+  int page = 0;
   bool loading = false;
   List songList = [];
   bool fetched = false;
@@ -451,219 +451,197 @@ class _SongsListPageState extends State<SongsListPage> {
                           future: SaavnAPI().getAlbumRecommendations(
                             widget.listItem['id'].toString(),
                           ),
-                          builder: (context, snapshot) => snapshot.hasData
-                              ? snapshot.data!.isNotEmpty
-                                  ? Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            left: 20.0,
-                                            top: 5.0,
-                                            bottom: 5.0,
-                                          ),
-                                          child: Text(
-                                            'Recommendations',
-                                            style: TextStyle(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .secondary,
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(
-                                          height: boxSize + 15,
-                                          child: ListView.builder(
-                                            physics:
-                                                const BouncingScrollPhysics(),
-                                            scrollDirection: Axis.horizontal,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 10,
-                                            ),
-                                            itemCount: snapshot.data!.length,
-                                            itemBuilder: (context, index) {
-                                              final Map item =
-                                                  snapshot.data![index] as Map;
-                                              if (item.isEmpty) {
-                                                return const SizedBox();
-                                              }
-                                              return GestureDetector(
-                                                onLongPress: () {
-                                                  Feedback.forLongPress(
-                                                      context);
-                                                  showDialog(
-                                                    context: context,
-                                                    builder: (context) {
-                                                      return InteractiveViewer(
-                                                        child: Stack(
-                                                          children: [
-                                                            GestureDetector(
-                                                              onTap: () =>
-                                                                  Navigator.pop(
-                                                                      context),
-                                                            ),
-                                                            AlertDialog(
-                                                              shape:
-                                                                  RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            15.0),
-                                                              ),
-                                                              backgroundColor:
-                                                                  Colors
-                                                                      .transparent,
-                                                              contentPadding:
-                                                                  EdgeInsets
-                                                                      .zero,
-                                                              content:
-                                                                  imageCard(
-                                                                borderRadius:
-                                                                    15.0,
-                                                                imageUrl: item[
-                                                                        'image']
-                                                                    .toString(),
-                                                                imageQuality:
-                                                                    ImageQuality
-                                                                        .high,
-                                                                boxDimension:
-                                                                    MediaQuery
-                                                                            .sizeOf(
-                                                                          context,
-                                                                        ).width *
-                                                                        0.8,
-                                                                placeholderImage:
-                                                                    const AssetImage(
-                                                                  'assets/album.png',
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      );
-                                                    },
-                                                  );
-                                                },
-                                                onTap: () {
-                                                  Navigator.push(
-                                                    context,
-                                                    PageRouteBuilder(
-                                                      opaque: false,
-                                                      pageBuilder:
-                                                          (_, __, ___) =>
-                                                              SongsListPage(
-                                                        listItem: item,
-                                                      ),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const SizedBox();
+                            }
+                            if (!snapshot.hasData || snapshot.data == null) {
+                              return const SizedBox();
+                            }
+                            final recommendations =
+                                snapshot.data as List<dynamic>;
+                            if (recommendations.isEmpty) {
+                              return const SizedBox();
+                            }
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 20.0,
+                                    top: 5.0,
+                                    bottom: 5.0,
+                                  ),
+                                  child: Text(
+                                    'Recommendations',
+                                    style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: boxSize + 15,
+                                  child: ListView.builder(
+                                    physics: const BouncingScrollPhysics(),
+                                    scrollDirection: Axis.horizontal,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                    ),
+                                    itemCount: recommendations.length,
+                                    itemBuilder: (context, index) {
+                                      final Map item =
+                                          recommendations[index] as Map;
+                                      if (item.isEmpty) {
+                                        return const SizedBox();
+                                      }
+                                      return GestureDetector(
+                                        onLongPress: () {
+                                          Feedback.forLongPress(context);
+                                          showDialog(
+                                            context: context,
+                                            builder: (context) {
+                                              return InteractiveViewer(
+                                                child: Stack(
+                                                  children: [
+                                                    GestureDetector(
+                                                      onTap: () =>
+                                                          Navigator.pop(context),
                                                     ),
-                                                  );
-                                                },
-                                                child: SizedBox(
-                                                  width: boxSize - 30,
-                                                  child: HoverBox(
-                                                    child: imageCard(
-                                                      margin:
-                                                          const EdgeInsets.all(
-                                                              4.0),
-                                                      borderRadius: 10.0,
-                                                      imageUrl: item['image']
-                                                          .toString(),
-                                                      imageQuality:
-                                                          ImageQuality.medium,
-                                                      placeholderImage:
-                                                          const AssetImage(
-                                                        'assets/album.png',
+                                                    AlertDialog(
+                                                      shape:
+                                                          RoundedRectangleBorder(
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                                15.0),
                                                       ),
-                                                    ),
-                                                    builder: ({
-                                                      required BuildContext
+                                                      backgroundColor:
+                                                          Colors.transparent,
+                                                      contentPadding:
+                                                          EdgeInsets.zero,
+                                                      content: imageCard(
+                                                        borderRadius: 15.0,
+                                                        imageUrl: item['image']
+                                                            .toString(),
+                                                        imageQuality:
+                                                            ImageQuality.high,
+                                                        boxDimension:
+                                                            MediaQuery.sizeOf(
                                                           context,
-                                                      required bool isHover,
-                                                      Widget? child,
-                                                    }) {
-                                                      return Card(
-                                                        color: isHover
-                                                            ? null
-                                                            : Colors
-                                                                .transparent,
-                                                        elevation: 0,
-                                                        margin: EdgeInsets.zero,
-                                                        shape:
-                                                            RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(
-                                                            10.0,
-                                                          ),
+                                                        ).width *
+                                                                0.8,
+                                                        placeholderImage:
+                                                            const AssetImage(
+                                                          'assets/album.png',
                                                         ),
-                                                        clipBehavior:
-                                                            Clip.antiAlias,
-                                                        child: Column(
-                                                          children: [
-                                                            Stack(
-                                                              children: [
-                                                                SizedBox.square(
-                                                                  dimension: isHover
-                                                                      ? boxSize -
-                                                                          25
-                                                                      : boxSize -
-                                                                          30,
-                                                                  child: child,
-                                                                ),
-                                                              ],
-                                                            ),
-                                                            Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .symmetric(
-                                                                horizontal:
-                                                                    10.0,
-                                                              ),
-                                                              child: Column(
-                                                                children: [
-                                                                  Text(
-                                                                    item['title']
-                                                                            ?.toString()
-                                                                            .unescape() ??
-                                                                        '',
-                                                                    textAlign:
-                                                                        TextAlign
-                                                                            .center,
-                                                                    softWrap:
-                                                                        false,
-                                                                    overflow:
-                                                                        TextOverflow
-                                                                            .ellipsis,
-                                                                    style:
-                                                                        const TextStyle(
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .w500,
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      );
-                                                    },
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          );
+                                        },
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            PageRouteBuilder(
+                                              opaque: false,
+                                              pageBuilder: (_, __, ___) =>
+                                                  SongsListPage(
+                                                listItem: item,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        child: SizedBox(
+                                          width: boxSize - 30,
+                                          child: HoverBox(
+                                            child: imageCard(
+                                              margin:
+                                                  const EdgeInsets.all(4.0),
+                                              borderRadius: 10.0,
+                                              imageUrl: item['image'].toString(),
+                                              imageQuality: ImageQuality.medium,
+                                              placeholderImage:
+                                                  const AssetImage(
+                                                'assets/album.png',
+                                              ),
+                                            ),
+                                            builder: ({
+                                              required BuildContext context,
+                                              required bool isHover,
+                                              Widget? child,
+                                            }) {
+                                              return Card(
+                                                color: isHover
+                                                    ? null
+                                                    : Colors.transparent,
+                                                elevation: 0,
+                                                margin: EdgeInsets.zero,
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                    10.0,
                                                   ),
+                                                ),
+                                                clipBehavior: Clip.antiAlias,
+                                                child: Column(
+                                                  children: [
+                                                    Stack(
+                                                      children: [
+                                                        SizedBox.square(
+                                                          dimension: isHover
+                                                              ? boxSize - 25
+                                                              : boxSize - 30,
+                                                          child: child,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    Padding(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        horizontal: 10.0,
+                                                      ),
+                                                      child: Column(
+                                                        children: [
+                                                          Text(
+                                                            item['title']
+                                                                    ?.toString()
+                                                                    .unescape() ??
+                                                                '',
+                                                            textAlign:
+                                                                TextAlign.center,
+                                                            softWrap: false,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: const TextStyle(
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
                                                 ),
                                               );
                                             },
                                           ),
                                         ),
-                                      ],
-                                    )
-                                  : const SizedBox(
-                                      height: 0.0,
-                                    )
-                              : const SizedBox(
-                                  height: 0.0,
+                                      );
+                                    },
+                                  ),
                                 ),
+                              ],
+                            );
+                          },
                         ),
                     ],
                   ),
