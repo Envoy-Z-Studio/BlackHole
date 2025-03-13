@@ -884,7 +884,6 @@ class ControlButtons extends StatelessWidget {
                     icon: const Icon(Icons.replay_30_rounded),
                     iconSize: miniplayer ? 24.0 : 45.0,
                     tooltip: AppLocalizations.of(context)!.skipPrevious,
-                    color: buttonsColor ?? Theme.of(context).iconTheme.color,
                     onPressed: () async =>
                         await audioHandler.customAction('rewind'),
                   ),
@@ -901,7 +900,6 @@ class ControlButtons extends StatelessWidget {
                     icon: const Icon(Icons.forward_30_rounded),
                     iconSize: miniplayer ? 24.0 : 45.0,
                     tooltip: AppLocalizations.of(context)!.skipNext,
-                    color: buttonsColor ?? Theme.of(context).iconTheme.color,
                     onPressed: () async =>
                         await audioHandler.customAction('fastForward'),
                   ),
